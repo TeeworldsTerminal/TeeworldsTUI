@@ -2,37 +2,63 @@ import { Interface } from "readline/promises";
 import { ServerData, handle, registerCommand } from "..";
 import { createInterface } from "node:readline/promises";
 import { clearLine, cursorTo } from "node:readline";
+import { notifierQuit } from "./notifier";
+import { terminal } from "terminal-kit";
 
 registerCommand("repl", repl);
 
 export async function repl(
   data: ServerData,
   args: string[],
-  inter?: Interface
+  f?: boolean
+  // inter?: Interface
 ) {
-  const rl =
-    inter ?? createInterface({ input: process.stdin, output: process.stdout });
+  // const rl =
+  //   inter ?? createInterface({ input: process.stdin, output: process.stdout });
+  //
+  if (!f) console.log("type exit to quit repl.");
 
-  if (!inter) console.log("type exit to quit repl.");
+  terminal.inputField(async (error, q) => {
+    // let q = await rl.question("");
 
-  let q = await rl.question("");
+    if (q == "exit") {
+      notifierQuit();
+      process.exit();
+    }
 
-  if (q == "exit") {
-    rl.close();
-    return;
-  }
+    terminal.eraseLine();
+    terminal.move(-1000, 0); // couldnt find a clean way to actually move to pos 0 so fuck it
 
-  console.log(
-    "\n \x1b[33m ------------------------------------------ \x1b[0m \n"
-  );
+    terminal("Processing command...");
 
-  await handle(
-    q.match(/"[^"]+"|\S+/g)?.map((m) => m.replace(/^"(.*)"$/, "$1")) ?? []
-  );
+    let start = new Date().getUTCMilliseconds();
 
-  console.log(
-    "\n \x1b[33m ------------------------------------------ \x1b[0m \n"
-  );
+    let resp = (await handle(
+      q?.match(/"[^"]+"|\S+/g)?.map((m) => m.replace(/^"(.*)"$/, "$1")) ?? [],
+      true
+    )) as { success: boolean; message: string };
 
-  repl(data, args, rl);
+    let timeTaken = new Date().getUTCMilliseconds() - start;
+
+    terminal.eraseLine();
+    terminal.move(-1000, 0);
+
+    if (resp.success) {
+      terminal.green(`Ran ${q} - success`).yellow(`   ~${timeTaken / 1000}s`);
+    } else {
+      terminal.red(`Ran ${q} - failed`).yellow(`   ~${timeTaken / 1000}s`);
+    }
+
+    terminal(
+      "\n\n \x1b[33m ------------------------------------------ \x1b[0m \n\n"
+    );
+
+    terminal(resp.message);
+
+    terminal(
+      "\n\n \x1b[33m ------------------------------------------ \x1b[0m \n"
+    );
+
+    repl(data, args, true);
+  });
 }

@@ -1,6 +1,10 @@
 {
   "dependencies": {
     "@types/node": "^20.3.0",
-    "node-fetch": "^2.0.0"
+    "@types/node-notifier": "^8.0.2",
+    "@types/terminal-kit": "^2.5.1",
+    "node-fetch": "^2.0.0",
+    "node-notifier": "^10.0.1",
+    "terminal-kit": "^3.0.0"
   }
 }
