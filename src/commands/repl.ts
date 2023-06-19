@@ -1,11 +1,8 @@
-import { Interface } from "readline/promises";
-import { ServerData, handle, registerCommand } from "..";
-import { createInterface } from "node:readline/promises";
-import { clearLine, cursorTo } from "node:readline";
+import { ServerData, commandHandler, handle } from "..";
 import { notifierQuit } from "./notifier";
 import { terminal } from "terminal-kit";
 
-registerCommand("repl", repl);
+commandHandler.register("repl", repl, ["r"]);
 
 export async function repl(
   data: ServerData,
