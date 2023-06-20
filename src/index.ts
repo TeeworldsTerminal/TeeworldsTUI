@@ -49,6 +49,7 @@ let help = `
 export let commandHandler = new CommandHandler();
 
 async function main() {
+  console.log("in main");
   await checkVersion();
 
   if (!args.length || !commands.includes(args[0].toLowerCase())) {
