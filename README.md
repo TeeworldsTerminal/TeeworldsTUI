@@ -12,14 +12,23 @@ From your command prompt you can run the following:
 To start the repl, the recommended way to use the cli.  
 every command from the repl can have the starting "tw" omitted
 
-`tw notifier  \n
-notifier (repl)`  
+```
+tw notifier  \n
+notifier (repl)
+```
+
 To start or disable the notifier interval
 
-`tw friends \n 
-friends (repl)`  
+```
+tw friends
+friends (repl)
+```
+
 To manage friends
 
-`tw find \n 
-find (repl)`  
+```
+tw find \n
+find (repl)
+```
+
 To find players / clans servers
