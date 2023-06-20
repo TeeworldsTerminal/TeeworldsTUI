@@ -13,23 +13,14 @@ export type ServerData = {
   }[];
 };
 
+export type DataTypes = ServerData;
+
 let args = process.argv.splice(2);
 let commands = ["find", "friends", "repl", "notifier"];
 
 let serverUrl = "https://master1.ddnet.org/ddnet/15/servers.json";
 
 export let friends = setupJSON();
-
-export let commandMap: Map<
-  string,
-  // Alot more data + this isnt always gaurenteed data since
-  // will probably add other endpoints eventually
-  (
-    data: ServerData,
-    args: string[],
-    repl?: boolean
-  ) => { message: string; success: boolean } | void | Promise<void> //its a fucking shit show
-> = new Map();
 
 let help = `
 --- Teeworlds CLI ---
@@ -42,17 +33,6 @@ let help = `
       - map
         [name]
 `;
-
-export function registerCommand(
-  name: string,
-  cb: (
-    data: ServerData,
-    args: string[],
-    repl?: boolean
-  ) => { message: string; success: boolean } | void | Promise<void>
-) {
-  commandMap.set(name, cb);
-}
 
 export let commandHandler = new CommandHandler();
 
@@ -67,17 +47,19 @@ async function main() {
   handle(args);
 }
 
-export async function getData() {
-  return (await (await fetch(serverUrl)).json()) as ServerData;
+// Turn dtype into an enum??
+export async function getData(
+  dType: "server" | "NOT_IMPLEMENTED"
+): Promise<DataTypes | undefined> {
+  if (dType == "server")
+    return (await (await fetch(serverUrl)).json()) as ServerData;
 }
 
 export async function handle(
   args: string[],
   repl?: boolean
 ): Promise<{ success: boolean; message: string } | void> {
-  let data = await getData();
-
-  return commandHandler.run(args[0], data, args.splice(1), repl);
+  return await commandHandler.run(args[0], args.splice(1), repl);
 }
 
 main();

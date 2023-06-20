@@ -1,11 +1,21 @@
 import path from "path";
-import { ServerData } from ".";
 import { readdir } from "fs/promises";
 
 export type Command = {
   name: string;
-  cb: (data: ServerData, args: string[], repl?: boolean) => any;
-  aliases: string[];
+  cb: (args: string[]) => void;
+
+  // Adding this replCb just causes alot of duplicate code, but for me
+  // Makes it cleaner to understand, might rever if it causes too much duplicate
+  extra: {
+    replCb?: (
+      args: string[]
+    ) =>
+      | Promise<{ success: boolean; message: string } | void>
+      | void
+      | { success: boolean; message: string };
+    aliases?: string[];
+  };
 };
 
 // This makes it so much slower since it needs to readdir, might revert.
@@ -25,15 +35,24 @@ export class CommandHandler {
 
   register(
     name: string,
-    cb: (data: ServerData, args: string[], repl?: boolean) => any,
-    aliases?: string[]
+    cb: (args: string[], repl?: boolean) => void,
+    extra: {
+      replCb?: (
+        args: string[]
+        // todo: make this shit its own type
+      ) =>
+        | Promise<{ success: boolean; message: string } | void>
+        | void
+        | { success: boolean; message: string };
+      aliases?: string[];
+    }
   ): boolean {
     if (
       this.commands.find(
         (x) =>
           x.name == name ||
-          x.aliases.includes(name) ||
-          x.aliases.some((y) => aliases?.includes(y))
+          x.extra.aliases?.includes(name) ||
+          x.extra.aliases?.some((y) => extra.aliases?.includes(y))
       )
     ) {
       console.log(
@@ -42,19 +61,26 @@ export class CommandHandler {
       return false;
     }
 
-    this.commands.push({ name, cb, aliases: aliases ?? [] });
+    this.commands.push({
+      name,
+      cb,
+      extra: { replCb: extra.replCb, aliases: extra.aliases ?? [] },
+    });
 
     return true;
   }
 
-  // todo: fix return type
-  run(name: string, data: ServerData, args: string[], repl?: boolean): any {
+  async run(
+    name: string,
+    args: string[],
+    repl?: boolean
+  ): Promise<{ success: boolean; message: string } | undefined | void> {
     let cmd = this.commands.find(
-      (x) => x.name == name || x.aliases.includes(name)
+      (x) => x.name == name || x.extra.aliases?.includes(name)
     );
 
-    if (!cmd) return false;
+    if (!cmd) return;
 
-    return cmd.cb(data, args, repl);
+    return repl ? await cmd.extra.replCb?.(args) : cmd.cb(args);
   }
 }

@@ -2,22 +2,12 @@ import { ServerData, commandHandler, handle } from "..";
 import { notifierQuit } from "./notifier";
 import { terminal } from "terminal-kit";
 
-commandHandler.register("repl", repl, ["r"]);
+commandHandler.register("repl", repl, { aliases: ["r"] });
 
-export async function repl(
-  data: ServerData,
-  args: string[],
-  f?: boolean
-  // inter?: Interface
-) {
-  // const rl =
-  //   inter ?? createInterface({ input: process.stdin, output: process.stdout });
-  //
+export async function repl(args: string[], f?: boolean) {
   if (!f) console.log("type exit to quit repl.");
 
-  terminal.inputField(async (error, q) => {
-    // let q = await rl.question("");
-
+  terminal.inputField(async (_, q) => {
     if (q == "exit") {
       notifierQuit();
       process.exit();
@@ -40,7 +30,7 @@ export async function repl(
     terminal.eraseLine();
     terminal.move(-1000, 0);
 
-    if (resp.success) {
+    if (resp?.success) {
       terminal.green(`Ran ${q} - success`).yellow(`   ~${timeTaken / 1000}s`);
     } else {
       terminal.red(`Ran ${q} - failed`).yellow(`   ~${timeTaken / 1000}s`);
@@ -50,12 +40,12 @@ export async function repl(
       "\n\n \x1b[33m ------------------------------------------ \x1b[0m \n\n"
     );
 
-    terminal(resp.message);
+    terminal(resp?.message || "No response was provided");
 
     terminal(
       "\n\n \x1b[33m ------------------------------------------ \x1b[0m \n"
     );
 
-    repl(data, args, true);
+    repl(args, true);
   });
 }
