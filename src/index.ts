@@ -1,6 +1,8 @@
+#!/usr/bin/env node
+
 import path from "path";
 import { CommandHandler } from "./commandsHandler";
-import { setupJSON } from "./utils";
+import { checkVersion, setupJSON } from "./utils";
 
 export type ServerData = {
   servers: {
@@ -28,22 +30,33 @@ let help = `
 
   commands:
     - find
-      - player
+      - player  (finds the server a player is on)
         [name]
-      - map
+      - clan    (finds all clan members servers)
         [name]
+    - notifier  (start/stop the notifier interval)
+      - start
+      - stop
+    - friends   (manage your friends)
+      - add
+        [name]
+      - remove
+        [name]
+      -list
+    - repl      (start the repl, recommended way to use)
 `;
 
 export let commandHandler = new CommandHandler();
 
 async function main() {
-  await commandHandler.loadCommands(path.join(__dirname, "commands")); //todo: move this after args.length check
+  await checkVersion();
 
   if (!args.length || !commands.includes(args[0].toLowerCase())) {
     console.log(help);
     process.exit(1);
   }
 
+  await commandHandler.loadCommands(path.join(__dirname, "commands"));
   handle(args);
 }
 
