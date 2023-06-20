@@ -9,7 +9,10 @@ Once installed run "npm i -g @wocketwun/tw.ts" to install the cli.
 
 From your command prompt you can run the following to start the repl, the recommended way to use the cli.  
 every command from the repl can have the starting "tw" omitted
-`tw repl`
+
+```
+tw repl
+```
 
 To start or disable the notifier interval
 
