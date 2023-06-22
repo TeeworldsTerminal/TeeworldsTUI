@@ -26,6 +26,12 @@ export function writeFriends(friends: JsonLayout) {
   );
 }
 
+export function splitSpace(str?: string) {
+  return str
+    ?.match(/"[^"]+"|\S+/g)
+    ?.map((m: string) => m.replace(/^"(.*)"$/, "$1"));
+}
+
 export async function checkVersion() {
   let latest = (
     await (

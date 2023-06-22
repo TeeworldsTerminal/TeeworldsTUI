@@ -19,7 +19,7 @@ export type ServerData = {
 export type DataTypes = ServerData;
 
 let args = process.argv.splice(2);
-let commands = ["find", "friends", "repl", "notifier", "player"];
+let commands = ["find", "friends", "repl", "notifier", "player", "import"];
 
 let serverUrl = "https://master1.ddnet.org/ddnet/15/servers.json";
 

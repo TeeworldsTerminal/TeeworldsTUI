@@ -1,4 +1,5 @@
 import { ServerData, commandHandler, handle } from "..";
+import { splitSpace } from "../utils";
 import { notifierQuit } from "./notifier";
 import { terminal } from "terminal-kit";
 
@@ -20,10 +21,10 @@ export async function repl(args: string[], f?: boolean) {
 
     let start = new Date().getUTCMilliseconds();
 
-    let resp = (await handle(
-      q?.match(/"[^"]+"|\S+/g)?.map((m) => m.replace(/^"(.*)"$/, "$1")) ?? [],
-      true
-    )) as { success: boolean; message: string };
+    let resp = (await handle(splitSpace(q) ?? [], true)) as {
+      success: boolean;
+      message: string;
+    };
 
     let timeTaken = new Date().getUTCMilliseconds() - start;
 

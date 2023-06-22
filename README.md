@@ -28,6 +28,13 @@ tw friends
 friends (repl)
 ```
 
+To import DDNet friends
+(no repl support yet)
+
+```
+tw import
+```
+
 To find players / clans servers
 
 ```
