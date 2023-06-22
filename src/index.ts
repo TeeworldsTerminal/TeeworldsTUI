@@ -7,6 +7,7 @@ import { WebScraper } from "./WebScraper";
 
 export type ServerData = {
   servers: {
+    addresses: string[];
     info: {
       name: string;
       map: { name: string };

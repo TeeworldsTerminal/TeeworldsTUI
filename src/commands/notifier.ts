@@ -2,7 +2,8 @@ import { notify } from "node-notifier";
 import { ServerData, commandHandler, friends, getData } from "../index";
 
 let interval: NodeJS.Timer | undefined = undefined;
-let cached: { name: string; server: string }[] = [];
+let cached: { name: string; servers: { name: string; address: string }[] }[] =
+  [];
 
 commandHandler.register("notifier", notifierFn, {
   aliases: ["s"],
@@ -69,14 +70,36 @@ export async function notiferFnRepl(args: string[]) {
   }
 }
 
+// TODO: clean this shit up
+// Originally i was using name to identify server, which makes no sense
+// So im now using server address, although servers have an array of addresses
+// Typically 2 in each array, so im just using the first in the array.
 async function notifierInterval() {
   let data = (await getData("server")) as ServerData;
 
   for (let i = 0; i < data.servers.length; i++) {
-    let s = data.servers[i];
+    let server = data.servers[i];
 
-    for (let c = 0; c < s.info.clients?.length; c++) {
-      let client = s.info.clients[c];
+    for (let x = 0; x < cached.length; x++) {
+      let cachedX = cached[x];
+
+      if (
+        cachedX.servers.find((f) => f.address == server.addresses[0]) !==
+        undefined &&
+        server.info.clients.find((sc) => sc.name == cachedX.name) == undefined
+      ) {
+        cachedX.servers = cachedX.servers.filter(
+          (f) => f.address != server.addresses[0]
+        );
+
+        if (cachedX.servers.length == 0) {
+          cached.splice(x, 1);
+        }
+      }
+    }
+
+    for (let c = 0; c < server.info.clients?.length; c++) {
+      let client = server.info.clients[c];
 
       if (friends.friends.includes(client.name)) {
         let cf = cached.find((x) => x.name == client.name);
@@ -84,18 +107,24 @@ async function notifierInterval() {
         if (!cf) {
           notify({
             title: `${client.name} is playing Teeworlds`,
-            message: `Server: ${s.info.name}\nMap: ${s.info.map.name} (${s.info.game_type})`,
+            message: `Server: ${server.info.name}\nMap: ${server.info.map.name} (${server.info.game_type})`,
           });
 
-          cached.push({ name: client.name, server: s.info.name });
+          cached.push({
+            name: client.name,
+            servers: [{ name: server.info.name, address: server.addresses[0] }],
+          });
         } else {
-          if (s.info.name != cf.server) {
+          if (!cf.servers.find((z) => z.address == server.addresses[0])) {
             notify({
               title: `${client.name} is playing Teeworlds`,
-              message: `Server: ${s.info.name}\nMap: ${s.info.map.name} (${s.info.game_type})`,
+              message: `Server: ${server.info.name}\nMap: ${server.info.map.name} (${server.info.game_type})`,
             });
 
-            cf.server = s.info.name;
+            cf.servers.push({
+              name: server.info.name,
+              address: server.addresses[0],
+            });
           }
         }
       }
