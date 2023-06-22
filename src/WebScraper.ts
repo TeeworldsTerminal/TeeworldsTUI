@@ -55,7 +55,10 @@ export type MapDifficulties =
   | "Solo"
   | "Race"
   | "Fun"
-  | "DDmaX"
+  | "DDmaX.Easy"
+  | "DDmaX.Next"
+  | "DDmaX.Pro"
+  | "DDmaX.Nut"
   | "Oldschool";
 
 export interface PlayerCompletedMapsData {
@@ -312,11 +315,42 @@ export class WebScraper {
     return parsed;
   }
 
+  // Decided to split ddmax into sep functions since website has done the same thing
+
   async getDDmaXMaps(playerName: string, data: any = null) {
+    return [
+      await this.getDDmaXEasyMaps(playerName, data),
+      await this.getDDmaXNextMaps(playerName, data),
+      await this.getDDmaXProMaps(playerName, data),
+      await this.getDDmaXNutMaps(playerName, data),
+    ];
+  }
+
+  async getDDmaXEasyMaps(playerName: string, data: any = null) {
     let $ = cheerio.load(data ?? (await this.getPlayerPage(playerName)));
 
-    // TODO: this produces null, fix later
-    let parsed = this.parseMaps($("div#DDmaX"), "DDmaX");
+    let parsed = this.parseMaps($("div#DDmaX\\.Easy"), "DDmaX.Easy");
+    return parsed;
+  }
+
+  async getDDmaXNextMaps(playerName: string, data: any = null) {
+    let $ = cheerio.load(data ?? (await this.getPlayerPage(playerName)));
+
+    let parsed = this.parseMaps($("div#DDmaX\\.Next"), "DDmaX.Next");
+    return parsed;
+  }
+
+  async getDDmaXProMaps(playerName: string, data: any = null) {
+    let $ = cheerio.load(data ?? (await this.getPlayerPage(playerName)));
+
+    let parsed = this.parseMaps($("div#DDmaX\\.Pro"), "DDmaX.Pro");
+    return parsed;
+  }
+
+  async getDDmaXNutMaps(playerName: string, data: any = null) {
+    let $ = cheerio.load(data ?? (await this.getPlayerPage(playerName)));
+
+    let parsed = this.parseMaps($("div#DDmaX\\.Nut"), "DDmaX.Nut");
     return parsed;
   }
 
@@ -355,7 +389,7 @@ export class WebScraper {
       await this.getInsaneMaps(playerName, data),
       await this.getBrutalMaps(playerName, data),
       await this.getDummyMaps(playerName, data),
-      await this.getDDmaXMaps(playerName, data),
+      ...(await this.getDDmaXMaps(playerName, data)),
       await this.getOldschoolMaps(playerName, data),
       await this.getSoloMaps(playerName, data),
       await this.getRaceMaps(playerName, data),

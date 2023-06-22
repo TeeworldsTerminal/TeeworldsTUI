@@ -1,12 +1,39 @@
+import { terminal } from "terminal-kit";
 import { ServerData, commandHandler, friends, getData } from "..";
 import { writeFriends } from "../utils";
+import { playerStats } from "./player";
 
 commandHandler.register("friends", friendsFn, {
   aliases: ["fr"],
   replCb: friendsFnRepl,
 });
 
+async function expirimentalFriends(args: string[]) {
+  terminal.singleColumnMenu(friends.friends, (err, resp) => {
+    terminal.eraseDisplayAbove();
+
+    terminal(`Selected: ${resp.selectedText}\n\n`);
+
+    terminal.singleColumnMenu(["Remove", "Stats"], async (err, respi) => {
+      if (respi.selectedText == "Stats") {
+        terminal("\n\n");
+
+        terminal.eraseDisplayAbove();
+
+        await playerStats([resp.selectedText]);
+
+        process.exit();
+      }
+    });
+  });
+}
+
 export async function friendsFn(args: string[]) {
+  if (args[0] && args[0] === "expiremental") {
+    expirimentalFriends(args);
+    return;
+  }
+
   if (!args[0]) {
     console.log(`expected usage: friends <add|remove|list> [name?]`);
     return;
