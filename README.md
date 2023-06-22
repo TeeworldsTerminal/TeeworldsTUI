@@ -3,7 +3,8 @@
 ### Installation
 
 Download node from `nodejs.org`, npm should be packaged with it.  
-Once installed run "npm i -g @wocketwun/tw.ts" to install the cli.
+Once installed run "npm i -g @wocketwun/tw.ts" to install the cli.  
+https://www.npmjs.com/package/@wocketwun/tw.ts
 
 ### Usage
 
