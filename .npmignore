@@ -1,0 +1,9 @@
+# Rules from: /home/jack/Coding/Typescript/Teeworlds/.gitignore
+node_modules
+config.json
+
+
+# npmignore - content above this line is automatically generated and modifications may be omitted
+# see npmjs.com/npmignore for more details.
+/src
+/node_modules

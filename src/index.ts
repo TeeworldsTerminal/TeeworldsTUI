@@ -3,6 +3,7 @@
 import path from "path";
 import { CommandHandler } from "./commandsHandler";
 import { checkVersion, setupJSON } from "./utils";
+import { WebScraper } from "./WebScraper";
 
 export type ServerData = {
   servers: {
@@ -18,7 +19,7 @@ export type ServerData = {
 export type DataTypes = ServerData;
 
 let args = process.argv.splice(2);
-let commands = ["find", "friends", "repl", "notifier"];
+let commands = ["find", "friends", "repl", "notifier", "player"];
 
 let serverUrl = "https://master1.ddnet.org/ddnet/15/servers.json";
 
@@ -47,9 +48,9 @@ let help = `
 `;
 
 export let commandHandler = new CommandHandler();
+export let webScraper = new WebScraper();
 
 async function main() {
-  console.log("in main");
   await checkVersion();
 
   if (!args.length || !commands.includes(args[0].toLowerCase())) {
