@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync } from "fs";
 import path from "path";
 import { terminal } from "terminal-kit";
+import { ServerData } from ".";
 
 export type JsonLayout = {
   friends: string[];
@@ -24,6 +25,16 @@ export function writeFriends(friends: JsonLayout) {
     path.join(__dirname, "../config.json"),
     JSON.stringify(friends)
   );
+}
+
+export function getServerClient(data: ServerData, name: string) {
+  for (let i = 0; i < data.servers.length; i++) {
+    let server = data.servers[i];
+
+    let x = server.info.clients?.find((x) => x.name == name);
+
+    if (x) return x;
+  }
 }
 
 export function splitSpace(str?: string) {

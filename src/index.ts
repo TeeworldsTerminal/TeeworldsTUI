@@ -11,7 +11,12 @@ export type ServerData = {
     info: {
       name: string;
       map: { name: string };
-      clients: { name: string; clan: string; team: 0 }[];
+      clients: {
+        name: string;
+        clan: string;
+        team: number;
+        skin: { name: string; color_body?: number; color_feet?: number };
+      }[];
       game_type: string;
     };
   }[];
@@ -20,7 +25,15 @@ export type ServerData = {
 export type DataTypes = ServerData;
 
 let args = process.argv.splice(2);
-let commands = ["find", "friends", "repl", "notifier", "player", "import"];
+let commands = [
+  "find",
+  "friends",
+  "repl",
+  "notifier",
+  "player",
+  "import",
+  "skin",
+];
 
 let serverUrl = "https://master1.ddnet.org/ddnet/15/servers.json";
 
