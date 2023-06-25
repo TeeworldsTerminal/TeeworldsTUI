@@ -4,6 +4,8 @@ import path from "path";
 import { CommandHandler } from "./commandsHandler";
 import { checkVersion, setupJSON } from "./utils";
 import { WebScraper } from "./WebScraper";
+import { terminal } from "terminal-kit";
+import { drawFriendsMenu } from "./menus/friends";
 
 export type ServerData = {
   servers: {
@@ -24,7 +26,6 @@ export type ServerData = {
 
 export type DataTypes = ServerData;
 
-let args = process.argv.splice(2);
 let commands = [
   "find",
   "friends",
@@ -39,41 +40,36 @@ let serverUrl = "https://master1.ddnet.org/ddnet/15/servers.json";
 
 export let friends = setupJSON();
 
-let help = `
---- Teeworlds CLI ---
-
-
-  commands:
-    - find
-      - player  (finds the server a player is on)
-        [name]
-      - clan    (finds all clan members servers)
-        [name]
-    - notifier  (start/stop the notifier interval)
-      - start
-      - stop
-    - friends   (manage your friends)
-      - add
-        [name]
-      - remove
-        [name]
-      -list
-    - repl      (start the repl, recommended way to use)
-`;
-
 export let commandHandler = new CommandHandler();
 export let webScraper = new WebScraper();
+
+terminal.on("key", (name: string, _m: string, _d: string) => {
+  if (name == "CTRL_C") {
+    terminal.eraseDisplayAbove();
+    process.exit();
+  }
+});
 
 async function main() {
   await checkVersion();
 
-  if (!args.length || !commands.includes(args[0].toLowerCase())) {
-    console.log(help);
-    process.exit(1);
-  }
+  drawMainMenu();
+}
 
-  await commandHandler.loadCommands(path.join(__dirname, "commands"));
-  handle(args);
+export function drawMainMenu() {
+  terminal.brightBlue("\n\nTeeworlds TUI\n\n");
+  terminal.singleColumnMenu(["Friends", "Find", "Quit"], (err, resp) => {
+    switch (resp.selectedText) {
+      case "Quit": {
+        terminal.eraseDisplayAbove();
+        process.exit();
+      }
+      case "Friends": {
+        drawFriendsMenu();
+        break;
+      }
+    }
+  });
 }
 
 // Turn dtype into an enum??
