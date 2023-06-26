@@ -56,20 +56,22 @@ async function main() {
   drawMainMenu();
 }
 
-export function drawMainMenu() {
+export async function drawMainMenu() {
   terminal.brightBlue("\n\nTeeworlds TUI\n\n");
-  terminal.singleColumnMenu(["Friends", "Find", "Quit"], (err, resp) => {
-    switch (resp.selectedText) {
-      case "Quit": {
-        terminal.eraseDisplayAbove();
-        process.exit();
-      }
-      case "Friends": {
-        drawFriendsMenu();
-        break;
-      }
+
+  let resp = await terminal.singleColumnMenu(["Friends", "Find", "Quit"])
+    .promise;
+
+  switch (resp.selectedText) {
+    case "Quit": {
+      terminal.eraseDisplayAbove();
+      process.exit();
     }
-  });
+    case "Friends": {
+      drawFriendsMenu();
+      break;
+    }
+  }
 }
 
 // Turn dtype into an enum??
