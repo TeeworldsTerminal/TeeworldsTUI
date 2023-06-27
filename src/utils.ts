@@ -8,6 +8,24 @@ export type JsonLayout = {
   clans: string[];
 };
 
+export function queryBinds(menuType: "line" | "column" | "grid"): {
+  [key: string]: string;
+} {
+  if (menuType == "column") {
+    return {
+      UP: "previous",
+      f: "escape",
+      DOWN: "next",
+      ENTER: "submit",
+      LEFT: "first",
+      RIGHT: "last",
+    };
+  }
+
+  // Too lazy to do this shit now
+  return { f: "escape" };
+}
+
 export function setupJSON() {
   let jsonPath = path.join(__dirname, "../config.json");
 

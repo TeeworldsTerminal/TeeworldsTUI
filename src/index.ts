@@ -5,7 +5,9 @@ import { CommandHandler } from "./commandsHandler";
 import { checkVersion, setupJSON } from "./utils";
 import { WebScraper } from "./WebScraper";
 import { terminal } from "terminal-kit";
-import { drawFriendsMenu } from "./menus/friends";
+import { drawFriendsMenu, grabQuery } from "./menus/friends";
+import { MenuTracker } from "./MenuTracker";
+import { drawServers } from "./menus/servers";
 
 export type ServerData = {
   servers: {
@@ -42,16 +44,21 @@ export let friends = setupJSON();
 
 export let commandHandler = new CommandHandler();
 export let webScraper = new WebScraper();
+export let menuTracker = new MenuTracker();
 
 terminal.on("key", (name: string, _m: string, _d: string) => {
   if (name == "CTRL_C") {
     terminal.eraseDisplayAbove();
     process.exit();
+  } else if (name == "f") {
+    if (["friends-main", "servers-main"].includes(menuTracker.getMenu())) {
+      grabQuery(menuTracker.getMenu());
+    }
   }
 });
 
 async function main() {
-  await checkVersion();
+  // await checkVersion();
 
   drawMainMenu();
 }
@@ -59,8 +66,12 @@ async function main() {
 export async function drawMainMenu() {
   terminal.brightBlue("\n\nTeeworlds TUI\n\n");
 
-  let resp = await terminal.singleColumnMenu(["Friends", "Find", "Quit"])
-    .promise;
+  let resp = await terminal.singleColumnMenu([
+    "Friends",
+    "Find",
+    "Servers",
+    "Quit",
+  ]).promise;
 
   switch (resp.selectedText) {
     case "Quit": {
@@ -69,6 +80,10 @@ export async function drawMainMenu() {
     }
     case "Friends": {
       drawFriendsMenu();
+      break;
+    }
+    case "Servers": {
+      drawServers();
       break;
     }
   }
