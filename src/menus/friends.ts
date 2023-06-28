@@ -11,7 +11,7 @@ import { queryBinds, splitSpace, writeFriends } from "../utils";
 import { PlayerCompletedMapsData, PlayerStats } from "../WebScraper";
 import { drawServers } from "./servers";
 
-export async function grabQuery(reference: string) {
+export async function grabQuery(reference: string, extra?: any) {
   menuTracker.setMenu("query-input");
 
   // Without the wait the menu isnt fully cancelled properly??
@@ -28,40 +28,60 @@ export async function grabQuery(reference: string) {
         autoCompleteMenu: true,
       }).promise;
 
-      drawFriendsMenu(resp);
+      drawFriendsMenu(resp, extra);
     } else if (reference == "servers-main") {
       let resp = await terminal.inputField({}).promise;
 
-      drawServers(resp);
+      drawServers(resp, extra);
     }
   }, 10);
 }
 
-export async function drawFriendsMenu(query = "") {
-  menuTracker.setMenu("friends-main");
-
-  terminal.eraseDisplayAbove();
+export async function drawFriendsMenu(
+  query = "",
+  extra: { page?: number } = { page: 1 }
+) {
+  terminal.eraseDisplay();
 
   let queriedFriends = query
     ? friends.friends.filter((x) => x.includes(query))
     : friends.friends;
 
+  let perPage = terminal.height - 12;
+  let curPage = extra.page || 1;
+  let maxPage = Math.ceil(queriedFriends.length / perPage);
+
+  if (curPage < 1) curPage = 1;
+  if (curPage > maxPage) curPage = maxPage;
+
+  menuTracker
+    .setMenu("friends-main")
+    .setFriendsPage(extra.page || 1)
+    .setFriendsQuery(query);
+
+  terminal.moveTo(1, 1);
+  terminal.green(`Page: ${curPage} / ${maxPage} (${perPage} per page)\n`);
+
   if (query != "") {
-    terminal.moveTo(1, 1);
     terminal.green(
-      ` Showing ${queriedFriends.length} / ${friends.friends.length} friends for query: "${query}"}\n\n`
+      `Showing ${queriedFriends.length} / ${friends.friends.length} friends for query: "${query}"\n\n`
     );
   }
 
   let resp = await terminal.singleColumnMenu(
     [
-      ...queriedFriends,
+      ...queriedFriends.filter(
+        (x, i) => i >= curPage * perPage - perPage && i < curPage * perPage
+      ),
       "",
-      "Add New Friend",
+      "Previous Page [<-]",
+      "Next Page [->]",
+      "",
+      "Add New Friend [A]",
       "",
       "Import Friends",
       "",
-      "Back To Main",
+      "Back To Main [ESC]",
     ],
     { cancelable: true, keyBindings: queryBinds("column") }
   ).promise;
@@ -70,7 +90,7 @@ export async function drawFriendsMenu(query = "") {
     return;
   }
 
-  if (resp.selectedText == "Back To Main") {
+  if (resp.selectedText == "Back To Main [ESC]") {
     terminal.eraseDisplayAbove();
     drawMainMenu();
     return;
@@ -81,31 +101,34 @@ export async function drawFriendsMenu(query = "") {
     //importFriends();
   } else if (friends.friends.includes(resp.selectedText)) {
     drawSelectedUser(resp.selectedText);
-  } else if (resp.selectedText == "Add New Friend") {
+  } else if (resp.selectedText == "Add New Friend [A]") {
     addFriend();
+  } else if (resp.selectedText == "Previous Page [<-]") {
+    drawFriendsMenu(query, { page: curPage - 1 });
+  } else if (resp.selectedText == "Next Page [->]") {
+    drawFriendsMenu(query, { page: curPage + 1 });
   }
 }
 
 // Would be nice to make it so the name is editable rather than having to write a name from scratch
 export async function addFriendInput() {
-  terminal.eraseDisplayAbove();
-
   terminal("Name: ");
 
   addFriend(await terminal.inputField().promise);
 }
 
 export async function addFriend(name = "") {
-  terminal.eraseDisplayAbove();
+  menuTracker.setMenu("friends-add").setPreviousMenu("friends-main");
+  terminal.eraseDisplay();
 
   terminal.moveTo(1, 1);
 
   let resp = await terminal.gridMenu([
     `Name: ${name}`,
     "",
-    "Add Friend",
+    "Add Friend [A]",
     "",
-    "Back",
+    "Back [ESC]",
   ]).promise;
 
   if (resp.selectedText == `Name: ${name}`) {
@@ -114,10 +137,10 @@ export async function addFriend(name = "") {
   } else if (resp.selectedText == "") {
     addFriend(name);
     return;
-  } else if (resp.selectedText == "Back") {
+  } else if (resp.selectedText == "Back [ESC]") {
     drawFriendsMenu();
     return;
-  } else if (resp.selectedText == "Add Friend") {
+  } else if (resp.selectedText == "Add Friend [A]") {
     if (!name) {
       let str = " You need to provide a name...";
       terminal.moveTo(terminal.width / 2 - str.length / 2, terminal.height / 2);
@@ -369,5 +392,33 @@ async function drawMap(
 
   if (resp.selectedText == "Go Back") {
     drawListMaps(name, maps, stats);
+  }
+}
+
+export function handleFriendsBinds(name: string) {
+  if (name == "LEFT") {
+    drawFriendsMenu(menuTracker.getFriendsQuery(), {
+      page: menuTracker.getFriendsPage() - 1,
+    });
+  } else if (name == "RIGHT") {
+    drawFriendsMenu(menuTracker.getFriendsQuery(), {
+      page: menuTracker.getFriendsPage() + 1,
+    });
+  } else if (name == "f") {
+    grabQuery(menuTracker.getMenu());
+  } else if (name == "ESCAPE") {
+    terminal.eraseDisplay();
+    drawMainMenu();
+  } else if (name == "a") {
+    addFriend();
+  }
+}
+
+export function handleFriendsAddBinds(name: string) {
+  if (name == "ESCAPE") {
+    drawFriendsMenu(menuTracker.getFriendsQuery(), {
+      page: menuTracker.getFriendsPage(),
+    });
+  } else if (name == "A") {
   }
 }

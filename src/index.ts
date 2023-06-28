@@ -5,9 +5,13 @@ import { CommandHandler } from "./commandsHandler";
 import { checkVersion, setupJSON } from "./utils";
 import { WebScraper } from "./WebScraper";
 import { terminal } from "terminal-kit";
-import { drawFriendsMenu, grabQuery } from "./menus/friends";
+import {
+  drawFriendsMenu,
+  grabQuery,
+  handleFriendsBinds,
+} from "./menus/friends";
 import { MenuTracker } from "./MenuTracker";
-import { drawServers } from "./menus/servers";
+import { drawServers, handleServersBinds } from "./menus/servers";
 
 export type ServerData = {
   servers: {
@@ -50,10 +54,12 @@ terminal.on("key", (name: string, _m: string, _d: string) => {
   if (name == "CTRL_C") {
     terminal.eraseDisplayAbove();
     process.exit();
-  } else if (name == "f") {
-    if (["friends-main", "servers-main"].includes(menuTracker.getMenu())) {
-      grabQuery(menuTracker.getMenu());
-    }
+  }
+
+  if (menuTracker.getMenu() == "friends-main") {
+    handleFriendsBinds(name);
+  } else if (menuTracker.getMenu() == "servers-main") {
+    handleServersBinds(name);
   }
 });
 
@@ -64,6 +70,7 @@ async function main() {
 }
 
 export async function drawMainMenu() {
+  menuTracker.setMenu("main").setPreviousMenu("menu");
   terminal.brightBlue("\n\nTeeworlds TUI\n\n");
 
   let resp = await terminal.singleColumnMenu([
@@ -95,13 +102,6 @@ export async function getData(
 ): Promise<DataTypes | undefined> {
   if (dType == "server")
     return (await (await fetch(serverUrl)).json()) as ServerData;
-}
-
-export async function handle(
-  args: string[],
-  repl?: boolean
-): Promise<{ success: boolean; message: string } | void> {
-  return await commandHandler.run(args[0], args.splice(1), repl);
 }
 
 main();

@@ -14,11 +14,18 @@ export function queryBinds(menuType: "line" | "column" | "grid"): {
   if (menuType == "column") {
     return {
       UP: "previous",
+      // All custom  binds must also escape otherwise menus will stack
       f: "escape",
+      q: "escape",
+      LEFT: "escape",
+      RIGHT: "escape",
+      ESCAPE: "escape",
+      a: "escape",
       DOWN: "next",
       ENTER: "submit",
-      LEFT: "first",
-      RIGHT: "last",
+      // These now used for next/previous page, may change
+      // LEFT: "first",
+      // RIGHT: "last",
     };
   }
 
