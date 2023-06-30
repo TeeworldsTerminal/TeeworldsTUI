@@ -1,14 +1,55 @@
-import { ServerData } from ".";
+import { ServerData, Servers } from ".";
 
 export class MenuTracker {
   currentMenu: string = "main";
   previousMenu: string = "main";
   friendsPage: number = 0;
   friendsQuery: string = "";
+  friendsMaxPerPage: number = 0;
+  friendsFilteredData: string[] = [];
+
+  serversFilteredData: Servers[] = [];
   serverQuery: string = "";
   serverFilter: "none" | "ascending" | "descending" = "none";
   serverPage: number = 0;
   serverData?: ServerData;
+  serversMaxPerPage = 0;
+
+  setFriendsFilteredData(data: string[]) {
+    this.friendsFilteredData = data;
+    return this;
+  }
+
+  getFriendsFilteredData() {
+    return this.friendsFilteredData;
+  }
+
+  setFriendsMaxPerPage(max: number) {
+    this.friendsMaxPerPage = max;
+    return this;
+  }
+
+  getFriendsMaxPerPage() {
+    return this.friendsMaxPerPage;
+  }
+
+  setServersFilteredData(data: Servers[]) {
+    this.serversFilteredData = data;
+    return this;
+  }
+
+  getServersFilteredData() {
+    return this.serversFilteredData;
+  }
+
+  setServersMaxPerPage(max: number) {
+    this.serversMaxPerPage = max;
+    return this;
+  }
+
+  getServersMaxPerPage() {
+    return this.serversMaxPerPage;
+  }
 
   setServerData(data: ServerData) {
     this.serverData = data;

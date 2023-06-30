@@ -1,0 +1,3 @@
+Track which server / player is currently selected by listening to arrow presses
+So we can keep track of the full object without needing to dispaly all information on the current line
+like im currently doing with servers

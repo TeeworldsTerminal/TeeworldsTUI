@@ -8,6 +8,21 @@ export type JsonLayout = {
   clans: string[];
 };
 
+export let emojis = {
+  greenCircle: String.fromCodePoint(0x1f7e2),
+  redCircle: String.fromCodePoint(0x1f534),
+};
+
+export function longestName(names: string[]) {
+  let cur = 0;
+  for (let i = 0; i < names.length; i++) {
+    let l = names[i].length;
+    if (l > cur) cur = l;
+  }
+
+  return cur;
+}
+
 export function queryBinds(menuType: "line" | "column" | "grid"): {
   [key: string]: string;
 } {

@@ -1,34 +1,32 @@
 #!/usr/bin/env node
 
-import path from "path";
 import { CommandHandler } from "./commandsHandler";
 import { checkVersion, setupJSON } from "./utils";
 import { WebScraper } from "./WebScraper";
 import { terminal } from "terminal-kit";
-import {
-  drawFriendsMenu,
-  grabQuery,
-  handleFriendsBinds,
-} from "./menus/friends";
+import { drawFriendsMenu, registerFriendBinds } from "./menus/friends";
 import { MenuTracker } from "./MenuTracker";
 import { drawServers, handleServersBinds } from "./menus/servers";
+import { BindHandler } from "./BindHandler";
 
 export type ServerData = {
-  servers: {
-    addresses: string[];
-    info: {
-      name: string;
-      map: { name: string };
-      clients: {
-        name: string;
-        clan: string;
-        team: number;
-        skin: { name: string; color_body?: number; color_feet?: number };
-      }[];
-      game_type: string;
-    };
-  }[];
+  servers: Servers;
 };
+
+export type Servers = {
+  addresses: string[];
+  info: {
+    name: string;
+    map: { name: string };
+    clients: {
+      name: string;
+      clan: string;
+      team: number;
+      skin: { name: string; color_body?: number; color_feet?: number };
+    }[];
+    game_type: string;
+  };
+}[];
 
 export type DataTypes = ServerData;
 
@@ -49,6 +47,7 @@ export let friends = setupJSON();
 export let commandHandler = new CommandHandler();
 export let webScraper = new WebScraper();
 export let menuTracker = new MenuTracker();
+export let bindHandler = new BindHandler();
 
 terminal.on("key", (name: string, _m: string, _d: string) => {
   if (name == "CTRL_C") {
@@ -56,16 +55,14 @@ terminal.on("key", (name: string, _m: string, _d: string) => {
     process.exit();
   }
 
-  if (menuTracker.getMenu() == "friends-main") {
-    handleFriendsBinds(name);
-  } else if (menuTracker.getMenu() == "servers-main") {
-    handleServersBinds(name);
-  }
+  bindHandler.runBind(menuTracker.getMenu(), name);
 });
 
 async function main() {
   // await checkVersion();
 
+  // Register binds through functions to prevent circular dependancy funny shit
+  registerFriendBinds();
   drawMainMenu();
 }
 

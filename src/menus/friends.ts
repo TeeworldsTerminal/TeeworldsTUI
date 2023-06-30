@@ -1,13 +1,20 @@
 import { terminal } from "terminal-kit";
 import {
   ServerData,
+  bindHandler,
   drawMainMenu,
   friends,
   getData,
   menuTracker,
   webScraper,
 } from "..";
-import { queryBinds, splitSpace, writeFriends } from "../utils";
+import {
+  queryBinds,
+  splitSpace,
+  writeFriends,
+  emojis,
+  longestName,
+} from "../utils";
 import { PlayerCompletedMapsData, PlayerStats } from "../WebScraper";
 import { drawServers } from "./servers";
 
@@ -36,12 +43,16 @@ export async function grabQuery(reference: string, extra?: any) {
     }
   }, 10);
 }
-
+// TODO: pass data when changing pages
 export async function drawFriendsMenu(
   query = "",
-  extra: { page?: number } = { page: 1 }
+  extra: { page?: number; data?: ServerData } = { page: 1 }
 ) {
   terminal.eraseDisplay();
+
+  let data = (extra.data ?? (await getData("server")))!;
+
+  menuTracker.setServerData(data);
 
   let queriedFriends = query
     ? friends.friends.filter((x) => x.includes(query))
@@ -56,11 +67,26 @@ export async function drawFriendsMenu(
 
   menuTracker
     .setMenu("friends-main")
-    .setFriendsPage(extra.page || 1)
-    .setFriendsQuery(query);
+    .setFriendsPage(curPage || 1)
+    .setFriendsQuery(query)
+    .setFriendsMaxPerPage(perPage);
 
   terminal.moveTo(1, 1);
   terminal.green(`Page: ${curPage} / ${maxPage} (${perPage} per page)\n`);
+
+  let filtered = queriedFriends.filter(
+    (x, i) => i >= curPage * perPage - perPage && i < curPage * perPage
+  );
+
+  let onlineFriends: string[] = [];
+
+  for (let i = 0; i < data.servers.length; i++) {
+    let y = data.servers[i].info.clients?.find((x) =>
+      friends.friends.includes(x.name)
+    );
+
+    if (y) onlineFriends.push(y.name);
+  }
 
   if (query != "") {
     terminal.green(
@@ -68,30 +94,43 @@ export async function drawFriendsMenu(
     );
   }
 
+  menuTracker.setFriendsFilteredData(filtered);
+
+  let extraButtons = [
+    "",
+    "Previous Page [<-]",
+    "Next Page [->]",
+    "",
+    "Add New Friend [A]",
+    "",
+    "Import Friends",
+    "",
+    "Back To Main [ESC]",
+  ];
+
+  let longest = longestName(filtered);
+
   let resp = await terminal.singleColumnMenu(
     [
-      ...queriedFriends.filter(
-        (x, i) => i >= curPage * perPage - perPage && i < curPage * perPage
+      ...filtered.map((x) =>
+        onlineFriends.includes(x)
+          ? `${x} ${" ".repeat(longest - x.length + 10)}  ${emojis.greenCircle}`
+          : `${x} ${" ".repeat(longest - x.length + 10)}  ${emojis.redCircle}`
       ),
-      "",
-      "Previous Page [<-]",
-      "Next Page [->]",
-      "",
-      "Add New Friend [A]",
-      "",
-      "Import Friends",
-      "",
-      "Back To Main [ESC]",
+      ...extraButtons,
     ],
-    { cancelable: true, keyBindings: queryBinds("column") }
+    {
+      cancelable: true,
+      keyBindings: queryBinds("column"),
+    }
   ).promise;
 
-  if (resp === undefined) {
+  if (resp.selectedText === undefined) {
     return;
   }
 
   if (resp.selectedText == "Back To Main [ESC]") {
-    terminal.eraseDisplayAbove();
+    terminal.eraseDisplay();
     drawMainMenu();
     return;
   } else if (resp.selectedText == "") {
@@ -99,20 +138,20 @@ export async function drawFriendsMenu(
     return;
   } else if (resp.selectedText == "Import Friends") {
     //importFriends();
-  } else if (friends.friends.includes(resp.selectedText)) {
-    drawSelectedUser(resp.selectedText);
   } else if (resp.selectedText == "Add New Friend [A]") {
     addFriend();
   } else if (resp.selectedText == "Previous Page [<-]") {
     drawFriendsMenu(query, { page: curPage - 1 });
   } else if (resp.selectedText == "Next Page [->]") {
     drawFriendsMenu(query, { page: curPage + 1 });
+  } else {
+    drawSelectedUser(filtered[resp.selectedIndex]);
   }
 }
 
 // Would be nice to make it so the name is editable rather than having to write a name from scratch
 export async function addFriendInput() {
-  terminal("Name: ");
+  terminal("\n\nName: ");
 
   addFriend(await terminal.inputField().promise);
 }
@@ -123,13 +162,22 @@ export async function addFriend(name = "") {
 
   terminal.moveTo(1, 1);
 
-  let resp = await terminal.gridMenu([
-    `Name: ${name}`,
-    "",
-    "Add Friend [A]",
-    "",
-    "Back [ESC]",
-  ]).promise;
+  let resp = await terminal.singleLineMenu(
+    [`Name: ${name}`, "", "Add Friend [A]", "", "Back [ESC]"],
+    {
+      cancelable: true,
+      keyBindings: {
+        ESCAPE: "escape",
+        ENTER: "submit",
+        LEFT: "previous",
+        UP: "next",
+        RIGHT: "next",
+        DOWN: "previous",
+      },
+    }
+  ).promise;
+
+  if (resp.selectedText == undefined) return;
 
   if (resp.selectedText == `Name: ${name}`) {
     addFriendInput();
@@ -286,6 +334,7 @@ export async function drawSelectedUser(
 
 async function drawPlayerStats(name: string, stats?: PlayerStats) {
   terminal.eraseDisplayAbove();
+  menuTracker.setMenu("player-stats");
 
   let str = `  Fetching stats for ${name}...`;
 
@@ -395,30 +444,36 @@ async function drawMap(
   }
 }
 
-export function handleFriendsBinds(name: string) {
-  if (name == "LEFT") {
+// Wrap in function to fix circular dependancy shit
+export function registerFriendBinds() {
+  bindHandler.register("friends-main", "LEFT", () =>
     drawFriendsMenu(menuTracker.getFriendsQuery(), {
       page: menuTracker.getFriendsPage() - 1,
-    });
-  } else if (name == "RIGHT") {
+      data: menuTracker.getServerData(),
+    })
+  );
+
+  bindHandler.register("friends-main", "RIGHT", () =>
     drawFriendsMenu(menuTracker.getFriendsQuery(), {
       page: menuTracker.getFriendsPage() + 1,
-    });
-  } else if (name == "f") {
-    grabQuery(menuTracker.getMenu());
-  } else if (name == "ESCAPE") {
+      data: menuTracker.getServerData(),
+    })
+  );
+
+  bindHandler.register("friends-main", "f", () =>
+    grabQuery(menuTracker.getMenu())
+  );
+
+  bindHandler.register("friends-main", "ESCAPE", () => {
     terminal.eraseDisplay();
     drawMainMenu();
-  } else if (name == "a") {
-    addFriend();
-  }
-}
+  });
 
-export function handleFriendsAddBinds(name: string) {
-  if (name == "ESCAPE") {
+  bindHandler.register("friends-main", "a", () => addFriend());
+
+  bindHandler.register("friends-add", "ESCAPE", () =>
     drawFriendsMenu(menuTracker.getFriendsQuery(), {
       page: menuTracker.getFriendsPage(),
-    });
-  } else if (name == "A") {
-  }
+    })
+  );
 }
