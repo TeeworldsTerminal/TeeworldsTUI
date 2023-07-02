@@ -11,6 +11,32 @@ export type JsonLayout = {
 export let emojis = {
   greenCircle: String.fromCodePoint(0x1f7e2),
   redCircle: String.fromCodePoint(0x1f534),
+  gerFlag: `${String.fromCodePoint(0x1f1e9)}${String.fromCodePoint(0x1f1ea)}`,
+  gbrFlag: `${String.fromCodePoint(0x1f1ec)}${String.fromCodePoint(0x1f1e7)}`,
+  usaFlag: `${String.fromCodePoint(0x1f1fa)}${String.fromCodePoint(0x1f1f8)}`,
+  questionMark: `${String.fromCodePoint(0x2753)}`,
+  chinaFlag: `${String.fromCodePoint(0x1f1e8)}${String.fromCodePoint(0x1f1f3)}`,
+  euFlag: `${String.fromCodePoint(0x1f1ea)}${String.fromCodePoint(0x1f1fa)}`,
+  ausFlag: `${String.fromCodePoint(0x1f1e6)}${String.fromCodePoint(0x1f1fa)}`,
+  map: String.fromCodePoint(0x1f5fa),
+  person: String.fromCodePoint(0x1f464),
+  fromStr(name: string) {
+    switch (name) {
+      case "oc":
+        return this.ausFlag;
+      case "as":
+        return this.chinaFlag;
+      case "as:cn":
+        return this.chinaFlag;
+      case "eu":
+        return this.euFlag;
+      case "na":
+        return this.usaFlag;
+
+      default:
+        return this.questionMark;
+    }
+  },
 };
 
 export function longestName(names: string[]) {

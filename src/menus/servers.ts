@@ -1,6 +1,13 @@
 import { terminal } from "terminal-kit";
-import { ServerData, drawMainMenu, getData, menuTracker } from "..";
-import { queryBinds } from "../utils";
+import {
+  Server,
+  ServerData,
+  bindHandler,
+  drawMainMenu,
+  getData,
+  menuTracker,
+} from "..";
+import { emojis, longestName, queryBinds } from "../utils";
 import { grabQuery } from "./friends";
 
 export async function drawServers(
@@ -60,7 +67,7 @@ export async function drawServers(
   if (curPage < 1) curPage = 1;
 
   // Set page in tracker after any corrections just incase;
-  menuTracker.setServerPage(curPage);
+  menuTracker.setServerPage(curPage).setServersMaxPage(maxPage);
 
   filtered = filtered?.filter(
     (x, y) => y >= curPage * perPage - perPage && y < curPage * perPage
@@ -75,12 +82,45 @@ export async function drawServers(
       `Showing ${filtered?.length} / ${data?.servers.length} servers with query "${query}"`
     );
 
+  // Probably slow, but it will probably only be an array of 15-20 items depending on terminal size
+  let longestServ = `${longestName(filtered.map((x) => x.info.name))}`;
+  let longestMap = longestName(filtered.map((x) => x.info.map.name));
+
+  let btns = [];
+
+  for (let i = 0; i < filtered.length; i++) {
+    let x = filtered[i];
+
+    let servName;
+
+    if (x.info.name.length > 20) {
+      servName = x.info.name.slice(0, 20) + "...";
+    } else servName = x.info.name;
+
+    // This just doesnt work as expected with the spaces, but whatever
+    btns.push(
+      `${emojis.fromStr(x.location)} ${servName} ${" ".repeat(
+        24 - `${x.info?.name.slice(0, 20)}...`.length
+      )} ${emojis.map} ${x.info.map.name} ${" ".repeat(
+        longestMap - x.info.map.name.length
+      )} ${emojis.person} ${x.info.clients.length} / 64`
+    );
+  }
+
+  let binds = queryBinds("column");
+
+  // This makes it so it doesnt redraw the page if
+  // You try and go back a page/forward when there isnt a page to go to
+  if (curPage == 1) {
+    binds.LEFT = "";
+  }
+  if (curPage == maxPage) {
+    binds.RIGHT = "";
+  }
+
   let resp = await terminal.singleColumnMenu(
     [
-      ...filtered!.map(
-        (x) =>
-          `${x.info?.name} (::) ${x.info.map?.name} (::) ${x.info.clients?.length} / 64 (::) ${x.addresses[0]}`
-      ),
+      ...btns,
       "",
       "Previous Page [<-]",
       "Next Page [->]",
@@ -88,7 +128,7 @@ export async function drawServers(
       "Query [Q]",
       "Go Back [ESC]",
     ] as string[],
-    { cancelable: true, keyBindings: queryBinds("column") }
+    { cancelable: true, keyBindings: binds }
   ).promise;
 
   // Cancelled
@@ -116,17 +156,13 @@ export async function drawServers(
   } else if (resp.selectedText == "") {
     drawServers(query);
   } else {
-    drawSelectedServer(data!, resp.selectedText);
+    drawSelectedServer(data!, filtered[resp.selectedIndex]);
   }
 }
 
-export async function drawSelectedServer(data: ServerData, name: string) {
+export async function drawSelectedServer(data: ServerData, server: Server) {
   terminal.eraseDisplayAbove();
   terminal.moveTo(1, 1);
-
-  let addr = name.split("(::)")[3].trim();
-
-  let server = data.servers.find((x) => x.addresses.includes(addr));
 
   if (!server) {
     let str = ` Error fetching this server... returning to list.`;
@@ -143,7 +179,7 @@ export async function drawSelectedServer(data: ServerData, name: string) {
     return;
   }
 
-  terminal.green(`Selected Server: ${server.info.name}\n\n`);
+  terminal.green(`Selected Server: ${server.info.name} ${server.location}\n\n`);
   terminal.green(
     `Map: ${server.info.map.name}\nPlayers: ${server.info.clients.length}\n\n`
   );
@@ -159,30 +195,49 @@ export async function drawSelectedServer(data: ServerData, name: string) {
   }
 }
 
-export function handleServersBinds(name: string) {
-  let filter = menuTracker.getServerFilter();
-  let page = menuTracker.getServerPage();
-  let data = menuTracker.getServerData();
-  if (name == "q") {
-    grabQuery("servers-main", { filter, page, data });
-  } else if (name == "ESCAPE") {
+export function registerServerBinds() {
+  bindHandler.register("servers-main", "q", () =>
+    grabQuery("servers-main", {
+      filter: menuTracker.getServerFilter(),
+      page: menuTracker.getServerPage(),
+      data: menuTracker.getServerData(),
+    })
+  );
+
+  bindHandler.register("servers-main", "ESCAPE", () => {
     terminal.eraseDisplay();
     drawMainMenu();
-  } else if (name == "f") {
+  });
+
+  bindHandler.register("servers-main", "f", () => {
+    let f = menuTracker.getServerFilter();
     let nf =
-      filter == "none"
-        ? "ascending"
-        : filter == "ascending"
-        ? "descending"
-        : "none";
+      f == "none" ? "ascending" : f == "ascending" ? "descending" : "none";
+
     drawServers(menuTracker.getServerQuery(), {
-      page,
+      page: menuTracker.getServerPage(),
       filter: nf as any,
-      data,
+      data: menuTracker.getServerData(),
     });
-  } else if (name == "LEFT") {
-    drawServers(menuTracker.getServerQuery(), { filter, page: page - 1, data });
-  } else if (name == "RIGHT") {
-    drawServers(menuTracker.getServerQuery(), { filter, page: page + 1, data });
-  }
+  });
+
+  bindHandler.register("servers-main", "LEFT", () => {
+    if (menuTracker.getServerPage() - 1 < 1) return;
+
+    drawServers(menuTracker.getServerQuery(), {
+      filter: menuTracker.getServerFilter(),
+      page: menuTracker.getServerPage() - 1,
+      data: menuTracker.getServerData(),
+    });
+  });
+
+  bindHandler.register("servers-main", "RIGHT", () => {
+    if (menuTracker.serverPage + 1 > menuTracker.serversMaxPage) return;
+
+    drawServers(menuTracker.getServerQuery(), {
+      filter: menuTracker.getServerFilter(),
+      page: menuTracker.getServerPage() + 1,
+      data: menuTracker.getServerData(),
+    });
+  });
 }

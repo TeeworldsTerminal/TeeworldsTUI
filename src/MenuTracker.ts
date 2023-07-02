@@ -1,5 +1,6 @@
-import { ServerData, Servers } from ".";
+import { ServerData, Server } from ".";
 
+// TODO: remove getters and jsut keep setters, no use at all
 export class MenuTracker {
   currentMenu: string = "main";
   previousMenu: string = "main";
@@ -7,13 +8,20 @@ export class MenuTracker {
   friendsQuery: string = "";
   friendsMaxPerPage: number = 0;
   friendsFilteredData: string[] = [];
+  friendsMaxPage = 0;
 
-  serversFilteredData: Servers[] = [];
+  serversMaxPage = 0;
+  serversFilteredData: Server[] = [];
   serverQuery: string = "";
   serverFilter: "none" | "ascending" | "descending" = "none";
   serverPage: number = 0;
   serverData?: ServerData;
   serversMaxPerPage = 0;
+
+  setFriendsMaxPage(max: number) {
+    this.friendsMaxPage = max;
+    return;
+  }
 
   setFriendsFilteredData(data: string[]) {
     this.friendsFilteredData = data;
@@ -33,7 +41,12 @@ export class MenuTracker {
     return this.friendsMaxPerPage;
   }
 
-  setServersFilteredData(data: Servers[]) {
+  setServersMaxPage(max: number) {
+    this.serversMaxPage = max;
+    return this;
+  }
+
+  setServersFilteredData(data: Server[]) {
     this.serversFilteredData = data;
     return this;
   }

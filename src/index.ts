@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 
 import { CommandHandler } from "./commandsHandler";
-import { checkVersion, setupJSON } from "./utils";
+import { checkVersion, emojis, setupJSON } from "./utils";
 import { WebScraper } from "./WebScraper";
 import { terminal } from "terminal-kit";
 import { drawFriendsMenu, registerFriendBinds } from "./menus/friends";
 import { MenuTracker } from "./MenuTracker";
-import { drawServers, handleServersBinds } from "./menus/servers";
+import { drawServers, registerServerBinds } from "./menus/servers";
 import { BindHandler } from "./BindHandler";
 
 export type ServerData = {
-  servers: Servers;
+  servers: Server[];
 };
 
-export type Servers = {
+export type Server = {
   addresses: string[];
+  location: string;
   info: {
     name: string;
     map: { name: string };
@@ -26,7 +27,7 @@ export type Servers = {
     }[];
     game_type: string;
   };
-}[];
+};
 
 export type DataTypes = ServerData;
 
@@ -63,6 +64,7 @@ async function main() {
 
   // Register binds through functions to prevent circular dependancy funny shit
   registerFriendBinds();
+  registerServerBinds();
   drawMainMenu();
 }
 
