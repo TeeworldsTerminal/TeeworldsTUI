@@ -1,44 +1,9 @@
-# Teeworld CLI
+# Teeworld TUI
+
+Expiremental Terminal UI based version of: https://github.com/WocketSesh/TeeworldsCLI
 
 ### Installation
 
-Download node from `nodejs.org`, npm should be packaged with it.  
-Once installed run "npm i -g @wocketwun/tw.ts" to install the cli.  
-https://www.npmjs.com/package/@wocketwun/tw.ts
-
-### Usage
-
-From your command prompt you can run the following to start the repl, the recommended way to use the cli.  
-every command from the repl can have the starting "tw" omitted
-
-```
-tw repl
-```
-
-To start or disable the notifier interval
-
-```
-tw notifier
-notifier (repl)
-```
-
-To manage friends
-
-```
-tw friends
-friends (repl)
-```
-
-To import DDNet friends
-(no repl support yet)
-
-```
-tw import
-```
-
-To find players / clans servers
-
-```
-tw find
-find (repl)
-```
+Currently there is no package on NPM for this.
+You will need `node.js` and `tsc` to run this.
+Clone the repo then run `tsc` to compile, then `npm run start` to run.
